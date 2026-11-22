@@ -1,0 +1,31 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Environment Variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Chroma Vector DB
+vector_db/
+
+# Downloads
+downloads/
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.webm
+
+# Model cache
+.cache/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
