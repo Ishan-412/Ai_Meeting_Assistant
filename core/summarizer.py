@@ -1,17 +1,9 @@
-from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 import os
-
-
-def get_llm():
-    api_key = os.getenv("MISTRAL_API_KEY")
-    if not api_key:
-        raise RuntimeError("MISTRAL_API_KEY is missing. Add it to your .env file.")
-    return ChatMistralAI(model="mistral-small-latest", mistral_api_key=api_key, temperature=0.3)
-
+from core.llm import get_llm
 
 def split_transcript(transcript: str) -> list:
     splitter = RecursiveCharacterTextSplitter(

@@ -6,7 +6,7 @@ A Streamlit application that turns a YouTube video or local audio/video file int
 
 - Python 3.11 (recommended)
 - FFmpeg available on your system path
-- A Mistral API key for summaries, extraction, and transcript chat
+- A Google Gemini API key for summaries, extraction, and transcript chat
 - A Sarvam API key for Hinglish transcription; English transcription uses local Whisper
 
 ## Setup
@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 Install FFmpeg if it is not already available. On Debian/Ubuntu use `sudo apt install ffmpeg`; on macOS with Homebrew use `brew install ffmpeg`; on Windows install FFmpeg and add its `bin` folder to `PATH`.
 
-Copy `.env.example` to `.env` and add the API keys you need. Keep `.env` private and do not commit it.
+Copy `.env.example` to `.env` and add the API keys you need. Keep `.env` private and do not commit it. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey). The Gemini free tier has usage limits, and Google may use free-tier prompts and responses to improve its products; avoid sending confidential meeting transcripts through it.
 
 ## Run
 
@@ -28,7 +28,7 @@ Copy `.env.example` to `.env` and add the API keys you need. Keep `.env` private
 streamlit run app.py
 ```
 
-Open the local address printed by Streamlit (normally `http://localhost:8501`). Choose a YouTube URL or upload an audio/video file, select English or Hinglish, and press **Analyse**. Whisper downloads its selected model the first time English transcription runs. Longer recordings take longer to process and may incur API usage for Mistral and Sarvam.
+Open the local address printed by Streamlit (normally `http://localhost:8501`). Choose a YouTube URL or upload an audio/video file, select English or Hinglish, and press **Analyse**. Whisper downloads its selected model the first time English transcription runs. Longer recordings take longer to process and may be limited by Gemini and Sarvam quotas.
 
 For a terminal workflow, run `python main.py` and enter a YouTube URL or local file path when prompted.
 
@@ -50,6 +50,6 @@ Generated audio files and the downloaded Whisper model are local runtime data. T
 ## Troubleshooting
 
 - **FFmpeg not found:** install FFmpeg and restart the terminal/IDE so its `bin` folder is on `PATH`. Set `FFMPEG_PATH` in `.env` to the FFmpeg executable or installation directory if automatic discovery fails.
-- **Mistral/Sarvam authentication:** check the matching key in `.env`; Mistral is needed for analysis/chat, while Sarvam is only needed for Hinglish transcription.
+- **Gemini/Sarvam authentication:** check the matching key in `.env`; Gemini is needed for analysis/chat, while Sarvam is only needed for Hinglish transcription.
 - **Whisper is slow:** the first run downloads the model. Set `WHISPER_MODEL=tiny` in `.env` for faster, less accurate local transcription, or `small` for the default.
 - **YouTube download fails:** confirm the URL is accessible and update the yt-dlp package with `pip install --upgrade yt-dlp`.

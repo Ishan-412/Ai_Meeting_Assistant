@@ -1,22 +1,13 @@
 # Actionableitems, decison, questions    implemented in this
 
 
-import os
-from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-
-
-def get_llm():
-    api_key = os.getenv("MISTRAL_API_KEY")
-    if not api_key:
-        raise RuntimeError("MISTRAL_API_KEY is missing. Add it to your .env file.")
-    return ChatMistralAI(model="mistral-small-latest", mistral_api_key=api_key, temperature=0.2)
-
+from core.llm import get_llm
 
 def build_chain(system_prompt: str):
-    llm = get_llm()
+    llm = get_llm(temperature=0.2)
 
     return (RunnablePassthrough() | RunnableLambda(lambda x: {"text": x}) | ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "{text}")]) | llm | StrOutputParser())
 
