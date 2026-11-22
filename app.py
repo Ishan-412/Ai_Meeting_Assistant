@@ -1,5 +1,4 @@
 import streamlit as st
-import time
 from html import escape
 from dotenv import load_dotenv
 from utils.audio_processor import process_input
@@ -389,37 +388,71 @@ if run_btn:
         st.session_state.pipeline_steps = {}
 
         progress_placeholder = st.empty()
+        progress_bar = st.progress(0, text="Starting analysis…")
+        progress_detail = st.empty()
+        progress_values = {
+            "audio": 0.08,
+            "transcript": 0.18,
+            "title": 0.58,
+            "summary": 0.66,
+            "extract": 0.76,
+            "rag": 0.92,
+        }
+        progress_labels = {
+            "audio": "Preparing audio",
+            "transcript": "Transcribing audio",
+            "title": "Generating title",
+            "summary": "Writing summary",
+            "extract": "Extracting meeting details",
+            "rag": "Building meeting search index",
+        }
 
-        def update_step(key, state):
+        def update_step(key, state, detail=None):
             st.session_state.pipeline_steps[key] = state
+            value = progress_values.get(key, 0)
+            if state == "done":
+                value = min(value + 0.08, 1.0)
+            progress_bar.progress(value, text=f"{progress_labels.get(key, 'Working')}…")
+            if detail:
+                progress_detail.caption(detail)
 
         try:
-            with progress_placeholder.container():
-                st.info("⚙️ Pipeline running — see sidebar for live status…")
+            progress_placeholder.info("⚙️ Analysis is running. Progress will update here.")
 
             update_step("audio", "active")
+            update_step("audio", "active", "Preparing audio from the selected video or file…")
             chunks = process_input(source)
             update_step("audio", "done")
 
             update_step("transcript", "active")
-            transcript = transcribe_all(chunks, language)
+            update_step("transcript", "active", f"Starting transcription of {len(chunks)} audio chunk(s)…")
+            def report_transcription_progress(message):
+                update_step("transcript", "active", message)
+
+            transcript = transcribe_all(chunks, language, progress_callback=report_transcription_progress)
             update_step("transcript", "done")
 
             update_step("title", "active")
+            update_step("title", "active", "Asking Gemini to create a concise title…")
             title = generate_title(transcript)
             update_step("title", "done")
 
             update_step("summary", "active")
+            update_step("summary", "active", "Asking Gemini to summarize the transcript…")
             summary = summarize(transcript)
             update_step("summary", "done")
 
             update_step("extract", "active")
+            update_step("extract", "active", "Extracting action items with Gemini…")
             action_items  = extract_action_items(transcript)
+            update_step("extract", "active", "Extracting decisions with Gemini…")
             decisions     = extract_key_decisions(transcript)
+            update_step("extract", "active", "Extracting open questions with Gemini…")
             questions     = extract_questions(transcript)
             update_step("extract", "done")
 
             update_step("rag", "active")
+            update_step("rag", "active", "Preparing the transcript for question answering…")
             rag_chain = build_rag_chain(transcript)
             update_step("rag", "done")
 
@@ -433,15 +466,16 @@ if run_btn:
                 "rag_chain": rag_chain,
             }
             st.session_state.pipeline_done = True
+            progress_bar.progress(1.0, text="Analysis complete")
+            progress_detail.empty()
             progress_placeholder.success("✅ Analysis complete!")
-            time.sleep(0.5)
-            progress_placeholder.empty()
-            st.rerun()
 
         except Exception as e:
             for k in ["audio","transcript","title","summary","extract","rag"]:
                 if st.session_state.pipeline_steps.get(k) == "active":
                     st.session_state.pipeline_steps[k] = "pending"
+            progress_bar.empty()
+            progress_detail.empty()
             progress_placeholder.error(f"❌ Error: {e}")
 
 # ── Results ──────────────────────────────────────────────────────────────────────

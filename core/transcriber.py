@@ -1,6 +1,7 @@
 import whisper
 import os
 import requests
+from typing import Callable, Optional
 from pydub import AudioSegment
 
 # Sarvam's sync STT-translate API rejects audio longer than 30s.
@@ -18,20 +19,24 @@ SARVAM_MODEL = os.getenv("SARVAM_STT_MODEL", "saaras:v2.5")
 _model = None
 
 
-def load_model():
+def load_model(progress_callback: Optional[Callable[[str], None]] = None):
 
     global _model
 
     if _model is None:
+        if progress_callback:
+            progress_callback(f"Loading Whisper {WHISPER_MODEL} model. The first run may download it…")
         print(f"Loading Whisper model: {WHISPER_MODEL} ...")
         _model = whisper.load_model(WHISPER_MODEL)
         print("Whisper model loaded.")
+        if progress_callback:
+            progress_callback("Whisper model is ready; transcribing audio…")
     return _model
 
 
-def transcribe_chunk_whisper(chunk_path: str) -> str:
+def transcribe_chunk_whisper(chunk_path: str, progress_callback: Optional[Callable[[str], None]] = None) -> str:
 
-    model = load_model()
+    model = load_model(progress_callback)
 
     result = model.transcribe(chunk_path, task="transcribe")
     return result["text"]
@@ -60,7 +65,7 @@ def _send_to_sarvam(piece_path: str) -> str:
     return response.json().get("transcript", "")
 
 
-def transcribe_chunk_sarvam(chunk_path: str) -> str:
+def transcribe_chunk_sarvam(chunk_path: str, progress_callback: Optional[Callable[[str], None]] = None) -> str:
     """
     Sarvam sync API only accepts ≤30s audio. We split this chunk into
     25-second pieces, send each separately, and join the transcripts.
@@ -81,6 +86,8 @@ def transcribe_chunk_sarvam(chunk_path: str) -> str:
 
         try:
             print(f"  → Sarvam piece {i + 1}/{total_pieces} ...")
+            if progress_callback:
+                progress_callback(f"Sarvam transcription: audio segment {i + 1} of {total_pieces}…")
             full_text += _send_to_sarvam(piece_path) + " "
         finally:
             if os.path.exists(piece_path):
@@ -92,18 +99,26 @@ def transcribe_chunk_sarvam(chunk_path: str) -> str:
 
 
 
-def transcribe_chunk(chunk_path: str, language: str = "english") -> str:
+def transcribe_chunk(
+    chunk_path: str,
+    language: str = "english",
+    progress_callback: Optional[Callable[[str], None]] = None,
+) -> str:
     """
     Route one chunk to Whisper or Sarvam depending on language choice.
     - english  → Whisper (local model)
     - hinglish → Sarvam (translates to English while transcribing)
     """
     if language.lower() == "hinglish":
-        return transcribe_chunk_sarvam(chunk_path)
-    return transcribe_chunk_whisper(chunk_path)
+        return transcribe_chunk_sarvam(chunk_path, progress_callback)
+    return transcribe_chunk_whisper(chunk_path, progress_callback)
 
 
-def transcribe_all(chunks: list, language: str = "english") -> str:
+def transcribe_all(
+    chunks: list,
+    language: str = "english",
+    progress_callback: Optional[Callable[[str], None]] = None,
+) -> str:
 
     if not chunks:
         raise ValueError("No audio chunks were created. Check that the input contains audio.")
@@ -118,8 +133,10 @@ def transcribe_all(chunks: list, language: str = "english") -> str:
     for i, chunk in enumerate(chunks):
 
         print(f"Transcribing chunk {i + 1}/{len(chunks)}...")
+        if progress_callback:
+            progress_callback(f"Transcribing audio chunk {i + 1} of {len(chunks)} with {engine}…")
 
-        text = transcribe_chunk(chunk, language=language)
+        text = transcribe_chunk(chunk, language=language, progress_callback=progress_callback)
 
         full_transcript += text + " "
 
