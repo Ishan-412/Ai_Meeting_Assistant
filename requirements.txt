@@ -37,5 +37,5 @@ sentence-transformers>=3.0.0
 huggingface-hub>=0.23.0
 
 # Utilities
-numpy>=1.26.0
+numpy>=1.26.0,<2.4
 tqdm>=4.66.0
