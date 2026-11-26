@@ -1,13 +1,16 @@
 import streamlit as st
+import os
 from html import escape
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from utils.audio_processor import process_input
 from core.transcriber import transcribe_all
 from core.summarizer import summarize, generate_title
 from core.extractor import extract_action_items, extract_key_decisions, extract_questions
 from core.rag_engine import build_rag_chain, ask_question
-
-load_dotenv()
+from core.settings import get_setting
 
 # ─── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -348,7 +351,6 @@ with st.sidebar:
     else:
         uploaded_file = st.file_uploader("Upload Audio / Video", type=["mp4", "mkv", "mp3", "wav", "m4a", "webm", "aac"])
         if uploaded_file is not None:
-            import os
             os.makedirs("downloads", exist_ok=True)
             saved_path = os.path.join("downloads", os.path.basename(uploaded_file.name))
             with open(saved_path, "wb") as f:
@@ -357,7 +359,7 @@ with st.sidebar:
 
     language = st.selectbox("Language", ["english", "hinglish"], index=0)
 
-    run_btn = st.button("⚡  Analyse", use_container_width=True)
+    run_btn = st.button("⚡  Analyse", width="stretch")
 
     if st.session_state.pipeline_done:
         st.markdown("---")
@@ -381,6 +383,10 @@ st.markdown("---")
 if run_btn:
     if not source.strip():
         st.error("Please provide a valid YouTube URL or upload a file.")
+    elif not get_setting("GOOGLE_API_KEY") and not get_setting("GEMINI_API_KEY"):
+        st.error("Add GOOGLE_API_KEY to your .env file or Streamlit secrets before analysing.")
+    elif language.lower() == "hinglish" and not get_setting("SARVAM_API_KEY"):
+        st.error("Add SARVAM_API_KEY to your .env file or Streamlit secrets to use Hinglish transcription.")
     else:
         st.session_state.pipeline_done = False
         st.session_state.result = None
@@ -419,12 +425,10 @@ if run_btn:
         try:
             progress_placeholder.info("⚙️ Analysis is running. Progress will update here.")
 
-            update_step("audio", "active")
             update_step("audio", "active", "Preparing audio from the selected video or file…")
             chunks = process_input(source)
             update_step("audio", "done")
 
-            update_step("transcript", "active")
             update_step("transcript", "active", f"Starting transcription of {len(chunks)} audio chunk(s)…")
             def report_transcription_progress(message):
                 update_step("transcript", "active", message)
@@ -432,17 +436,14 @@ if run_btn:
             transcript = transcribe_all(chunks, language, progress_callback=report_transcription_progress)
             update_step("transcript", "done")
 
-            update_step("title", "active")
             update_step("title", "active", "Asking Gemini to create a concise title…")
             title = generate_title(transcript)
             update_step("title", "done")
 
-            update_step("summary", "active")
             update_step("summary", "active", "Asking Gemini to summarize the transcript…")
             summary = summarize(transcript)
             update_step("summary", "done")
 
-            update_step("extract", "active")
             update_step("extract", "active", "Extracting action items with Gemini…")
             action_items  = extract_action_items(transcript)
             update_step("extract", "active", "Extracting decisions with Gemini…")
@@ -451,8 +452,7 @@ if run_btn:
             questions     = extract_questions(transcript)
             update_step("extract", "done")
 
-            update_step("rag", "active")
-            update_step("rag", "active", "Preparing the transcript for question answering…")
+            update_step("rag", "active", "Loading the embedding model and preparing transcript search…")
             rag_chain = build_rag_chain(transcript)
             update_step("rag", "done")
 
@@ -560,11 +560,16 @@ if st.session_state.result:
         </div>""", unsafe_allow_html=True)
 
     # Chat input
-    chat_col1, chat_col2 = st.columns([5, 1], gap="small")
-    with chat_col1:
-        user_input = st.text_input("Your question", placeholder="What were the main decisions made?", label_visibility="collapsed")
-    with chat_col2:
-        send_btn = st.button("Send →", use_container_width=True)
+    with st.form("meeting_chat_form", clear_on_submit=True):
+        chat_col1, chat_col2 = st.columns([5, 1], gap="small")
+        with chat_col1:
+            user_input = st.text_input(
+                "Your question",
+                placeholder="What were the main decisions made?",
+                label_visibility="collapsed",
+            )
+        with chat_col2:
+            send_btn = st.form_submit_button("Send →", width="stretch")
 
     if send_btn and user_input.strip():
         with st.spinner("Thinking…"):

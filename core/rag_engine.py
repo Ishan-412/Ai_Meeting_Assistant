@@ -82,7 +82,7 @@ Context from meeting transcript:
     return rag_chain
 
 def ask_question(rag_chain, question:str) -> str:
-    print(f"Question : {question}")
-    answer = rag_chain.invoke(question)
-    print(f"answer :{answer}")
-    return answer
+    question = question.strip()
+    if not question:
+        raise ValueError("Enter a question about the meeting transcript.")
+    return rag_chain.invoke(question)

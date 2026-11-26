@@ -27,6 +27,8 @@ downloads/
 
 # VS Code
 .vscode/
+.DS_Store
+.agents/
 
 # Logs
 *.log

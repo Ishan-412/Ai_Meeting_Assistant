@@ -3,18 +3,19 @@ import os
 import requests
 from typing import Callable, Optional
 from pydub import AudioSegment
+from core.settings import get_setting
 
 # Sarvam's sync STT-translate API rejects audio longer than 30s.
 # We slice each chunk into 25s pieces (with a 5s safety margin) before sending.
 SARVAM_PIECE_SECONDS = 25
 
 
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
+WHISPER_MODEL = get_setting("WHISPER_MODEL", "small")
 
 
-SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
+SARVAM_API_KEY = get_setting("SARVAM_API_KEY")
 SARVAM_STT_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text-translate"
-SARVAM_MODEL = os.getenv("SARVAM_STT_MODEL", "saaras:v2.5")
+SARVAM_MODEL = get_setting("SARVAM_STT_MODEL", "saaras:v2.5")
 
 _model = None
 
@@ -58,9 +59,10 @@ def _send_to_sarvam(piece_path: str) -> str:
         )
 
     if not response.ok:
-        print(f"\n❌ Sarvam returned {response.status_code}")
-        print(f"Response body: {response.text}\n")
-        response.raise_for_status()
+        raise RuntimeError(
+            f"Sarvam transcription failed with HTTP {response.status_code}. "
+            "Check the API key, account quota, and audio format."
+        )
 
     return response.json().get("transcript", "")
 

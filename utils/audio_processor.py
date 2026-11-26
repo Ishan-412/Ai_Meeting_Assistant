@@ -29,7 +29,6 @@ def download_youtube_audio(url: str) -> str:
         },
         'quiet': True,
         'no_warnings': True,
-        'nocheckcertificate': True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:

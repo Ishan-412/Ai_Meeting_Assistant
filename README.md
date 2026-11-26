@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 Install FFmpeg if it is not already available. On Debian/Ubuntu use `sudo apt install ffmpeg`; on macOS with Homebrew use `brew install ffmpeg`; on Windows install FFmpeg and add its `bin` folder to `PATH`.
 
-Copy `.env.example` to `.env` and add the API keys you need. Keep `.env` private and do not commit it. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey). The Gemini free tier has usage limits, and Google may use free-tier prompts and responses to improve its products; avoid sending confidential meeting transcripts through it.
+Copy `.env.example` to `.env` and add the API keys you need. Keep `.env` private and do not commit it. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey). The default model is `gemini-3.8-flash`; you can change it with `GEMINI_MODEL`. For Streamlit Community Cloud, add `GOOGLE_API_KEY`, optional `GEMINI_MODEL`, and `SARVAM_API_KEY` under the app's Secrets settings instead of uploading `.env`. Gemini free-tier requests have usage limits and may be used to improve Google's products; avoid sending confidential meeting transcripts through the free tier.
 
 ## Run
 

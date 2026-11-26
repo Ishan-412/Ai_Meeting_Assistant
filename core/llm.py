@@ -1,17 +1,20 @@
 """Shared Gemini chat model configuration."""
 
-import os
-
 from langchain_google_genai import ChatGoogleGenerativeAI
+from core.settings import get_setting
 
 
 def get_llm(temperature: float = 0.3) -> ChatGoogleGenerativeAI:
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = get_setting("GOOGLE_API_KEY") or get_setting("GEMINI_API_KEY")
     if not api_key:
-        raise RuntimeError("GOOGLE_API_KEY is missing. Add it to your .env file.")
+        raise RuntimeError(
+            "Google Gemini API key is missing. Set GOOGLE_API_KEY in .env "
+            "or in Streamlit secrets."
+        )
 
     return ChatGoogleGenerativeAI(
-        model=os.getenv("GEMINI_MODEL", "gemini-3.7-flash"),
+        model=get_setting("GEMINI_MODEL", "gemini-3.8-flash"),
         api_key=api_key,
         temperature=temperature,
+        max_retries=2,
     )
