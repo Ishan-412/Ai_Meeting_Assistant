@@ -6,7 +6,7 @@ A Streamlit application that turns a YouTube video or local audio/video file int
 
 - Python 3.11 (recommended)
 - FFmpeg available on your system path
-- A Google Gemini API key for summaries, extraction, and transcript chat
+- A Gemini API key or an OpenRouter API key for summaries, extraction, and transcript chat
 - A Sarvam API key for Hinglish transcription; English transcription uses local Whisper
 
 ## Setup
@@ -20,7 +20,12 @@ pip install -r requirements.txt
 
 Install FFmpeg if it is not already available. On Debian/Ubuntu use `sudo apt install ffmpeg`; on macOS with Homebrew use `brew install ffmpeg`; on Windows install FFmpeg and add its `bin` folder to `PATH`.
 
-Copy `.env.example` to `.env` and add the API keys you need. Keep `.env` private and do not commit it. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey). The default model is `gemini-3.8-flash`; you can change it with `GEMINI_MODEL`. For Streamlit Community Cloud, add `GOOGLE_API_KEY`, optional `GEMINI_MODEL`, and `SARVAM_API_KEY` under the app's Secrets settings instead of uploading `.env`. Gemini free-tier requests have usage limits and may be used to improve Google's products; avoid sending confidential meeting transcripts through the free tier.
+Copy `.env.example` to `.env` and add the key for the provider selected by `LLM_PROVIDER`. Keep `.env` private and do not commit it.
+
+- **Gemini:** set `LLM_PROVIDER=gemini`, add `GOOGLE_API_KEY`, and optionally set `GEMINI_MODEL` (defaults to `gemini-3.8-flash`). Create a key in [Google AI Studio](https://aistudio.google.com/app/apikey).
+- **OpenRouter:** set `LLM_PROVIDER=openrouter`, add `OPENROUTER_API_KEY`, and optionally set `OPENROUTER_MODEL` (defaults to `nvidia/nemotron-3.5-lightning:free`). Create a key on [OpenRouter](https://openrouter.ai/keys). Free model availability and request limits can change.
+
+The application uses exactly the provider named by `LLM_PROVIDER`; it does not silently fall back to another provider if that key or model is unavailable. For Streamlit Community Cloud, add the selected provider's settings and `SARVAM_API_KEY` under the app's Secrets settings instead of uploading `.env`. Review each provider's data policies before sending confidential meeting transcripts.
 
 ## Run
 
@@ -37,6 +42,7 @@ For a terminal workflow, run `python main.py` and enter a YouTube URL or local f
 ```text
 app.py                  Streamlit user interface
 main.py                 Terminal entry point
+core/pipeline.py        UI-independent analysis orchestration
 core/transcriber.py     Whisper and Sarvam transcription
 core/summarizer.py      Title and summary generation
 core/extractor.py       Action item, decision, and question extraction
@@ -45,7 +51,7 @@ core/vector_store.py    Transcript embeddings and retrieval
 utils/audio_processor.py Audio download, conversion, and chunking
 ```
 
-Generated audio files and the downloaded Whisper model are local runtime data. They are not source files and should not be submitted as project code. Include any separate dataset or media that your instructor requires and that you have permission to share.
+Generated intermediate audio is stored in a temporary workspace and removed when analysis finishes, including when a processing stage fails. The downloaded Whisper model remains local runtime data. These are not source files and should not be submitted as project code. Include any separate dataset or media that your instructor requires and that you have permission to share.
 
 ## Troubleshooting
 

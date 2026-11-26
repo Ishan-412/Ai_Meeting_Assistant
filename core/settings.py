@@ -1,6 +1,11 @@
 """Read application settings from environment variables or Streamlit secrets."""
 
 import os
+from dotenv import load_dotenv
+
+
+# Load project-local settings consistently for Streamlit, CLI, and direct use.
+load_dotenv()
 
 
 def get_setting(name: str, default: str | None = None) -> str | None:
