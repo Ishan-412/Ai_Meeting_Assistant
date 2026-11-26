@@ -21,22 +21,23 @@ def download_youtube_audio(url: str, work_dir: str | None = None) -> str:
                 "preferredquality": "192",
             }
         ],
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'web', 'ios']
-            }
-        },
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
-        },
         'quiet': True,
         'no_warnings': True,
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info)
-        wav_filename = os.path.splitext(filename)[0] + ".wav"
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+            wav_filename = os.path.splitext(filename)[0] + ".wav"
+    except yt_dlp.utils.DownloadError as error:
+        if "403" in str(error):
+            raise RuntimeError(
+                "YouTube refused the audio download (HTTP 403). The video may be "
+                "restricted, or YouTube may be blocking this hosting server. "
+                "Try uploading the audio or video file directly instead."
+            ) from error
+        raise
 
     return wav_filename
 

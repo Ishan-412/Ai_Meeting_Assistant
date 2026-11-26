@@ -58,4 +58,4 @@ Generated intermediate audio is stored in a temporary workspace and removed when
 - **FFmpeg not found:** install FFmpeg and restart the terminal/IDE so its `bin` folder is on `PATH`. Set `FFMPEG_PATH` in `.env` to the FFmpeg executable or installation directory if automatic discovery fails.
 - **Gemini/Sarvam authentication:** check the matching key in `.env`; Gemini is needed for analysis/chat, while Sarvam is only needed for Hinglish transcription.
 - **Whisper is slow:** the first run downloads the model. Set `WHISPER_MODEL=tiny` in `.env` for faster, less accurate local transcription, or `small` for the default.
-- **YouTube download fails:** confirm the URL is accessible and update the yt-dlp package with `pip install --upgrade yt-dlp`.
+- **YouTube returns HTTP 403:** yt-dlp's YouTube player requirements change over time, and YouTube may block cloud-hosted data-center IPs. The app uses yt-dlp's current default player selection; if YouTube still refuses the download, upload the audio/video file directly instead.
